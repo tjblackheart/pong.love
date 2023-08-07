@@ -18,8 +18,8 @@ function initObjects()
     paddle_l = {
         x = 20,
         y = screenH/2-50,
-        height = 100,
-        width = 10,
+        h = 100,
+        w = 10,
         speed = 250,
         score = 0
     }
@@ -27,8 +27,8 @@ function initObjects()
     paddle_r = {
         x = screenW-30,
         y = screenH/2-50,
-        height = 100,
-        width = 10,
+        h = 100,
+        w = 10,
         speed = 250,
         score = 0
     }
@@ -36,12 +36,12 @@ function initObjects()
     ball = {
         x = screenW/2-5,
         y = screenH/2-5,
+        h = 10,
+        w = 10,
         speed = 300,
         angle = math.random(20, 180),
         hdirection = 1,
-        vdirection = 1,
-        height = 10,
-        width = 10
+        vdirection = 1
     }
 end
 
@@ -107,7 +107,7 @@ function love.update(dt)
         paddle_r.y = paddle_r.y - paddle_r.speed*dt
     end
 
-    if kb.isDown('down') and paddle_r.y < screenH-paddle_r.height then
+    if kb.isDown('down') and paddle_r.y < screenH-paddle_r.h then
         paddle_r.y = paddle_r.y + paddle_r.speed*dt
     end
 
@@ -115,18 +115,18 @@ function love.update(dt)
     --[[if kb.isDown('w') and paddle_l.y > 0 then
         paddle_l.y = paddle_l.y - paddle_l.speed*dt
     end
-    if kb.isDown('s') and paddle_l.y < screenH-paddle_l.height then
+    if kb.isDown('s') and paddle_l.y < screenH-paddle_l.h then
         paddle_l.y = paddle_l.y + paddle_l.speed*dt
     end]]
 
     -- computer paddle movement
     if ball.hdirection == -1 then
-        if round(ball.y) < round(paddle_l.y) + paddle_l.height/2 then
+        if round(ball.y) < round(paddle_l.y) + paddle_l.h/2 then
             paddle_l.y = round(paddle_l.y - paddle_l.speed * dt * .75) -- make the computer move somewhat slower
             if paddle_l.y < 0 then paddle_l.y = 0 end
-        elseif round(ball.y) > round(paddle_l.y) + paddle_l.height/2 then
+        elseif round(ball.y) > round(paddle_l.y) + paddle_l.h/2 then
             paddle_l.y = round(paddle_l.y + paddle_l.speed * dt * .75)
-            if paddle_l.y+paddle_l.height > screenH then paddle_l.y = screenH - paddle_l.height end
+            if paddle_l.y+paddle_l.h > screenH then paddle_l.y = screenH - paddle_l.h end
         end
     end
 
@@ -140,19 +140,20 @@ function love.update(dt)
     end
 
     -- ball hits edges
-    if ball.y - ball.height <= 0 then
+    if ball.y - ball.h <= 0 then
         ball.vdirection = 1
         love.audio.play(ballblip)
-    elseif ball.y+ball.height >= screenH then
+    elseif ball.y+ball.h >= screenH then
         ball.vdirection = -1
         love.audio.play(ballblip)
     end
 
     -- ball hits paddles
-    -- changed paddle.width to 1 to prevent "ball gets stuck in the fucking paddle" thingy
     if
-    collision(paddle_l.x+paddle_l.width, paddle_l.y, 1, paddle_l.height, ball.x, ball.y, ball.width, ball.height) or
-    collision(paddle_r.x, paddle_r.y, 1, paddle_r.height, ball.x, ball.y, ball.width, ball.height) then
+        collision(paddle_l.x, paddle_l.y, paddle_l.w, paddle_l.h, ball.x, ball.y, ball.w, ball.h)
+        or
+        collision(paddle_r.x, paddle_r.y, paddle_r.w, paddle_r.h, ball.x, ball.y, ball.w, ball.h)
+    then
         ball.hdirection = -ball.hdirection
         ball.vdirection = math.random(2) == 1 and 1 or -1 -- randomly select 1 or -1
         ball.speed = ball.speed + 10 -- speed up
@@ -168,8 +169,8 @@ function love.update(dt)
         love.audio.play(ballout)
         ball.speed = 300
         ball.angle  = math.random(20, 180)
-        ball.x = screenW/2-ball.width/2
-        ball.y = screenH/2-ball.height/2
+        ball.x = screenW/2-ball.w/2
+        ball.y = screenH/2-ball.h/2
         ball.vdirection = math.random(2) == 1 and 1 or -1
         ball.hdirection = math.random(2) == 1 and 1 or -1
 
@@ -211,9 +212,9 @@ function love.draw(dt)
         gfx.print(paddle_r.score, screenW/2+40, 40)
         gfx.printf(text.t2, 0, screenH-40, screenW, 'center')
 
-        gfx.rectangle('fill', paddle_l.x, paddle_l.y, paddle_l.width, paddle_l.height)
-        gfx.rectangle('fill', paddle_r.x, paddle_r.y, paddle_r.width, paddle_r.height)
-        gfx.rectangle('fill', ball.x, ball.y, ball.width, ball.height)
+        gfx.rectangle('fill', paddle_l.x, paddle_l.y, paddle_l.w, paddle_l.h)
+        gfx.rectangle('fill', paddle_r.x, paddle_r.y, paddle_r.w, paddle_r.h)
+        gfx.rectangle('fill', ball.x, ball.y, ball.w, ball.h)
 
         gfx.setColor(255, 255, 255, .5)
         gfx.rectangle('line', screenW/2, 0, 1, screenH)
