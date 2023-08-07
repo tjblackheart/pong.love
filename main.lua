@@ -1,89 +1,87 @@
-local shine            = require 'shine'
-local gfx              = love.graphics
-local kb               = love.keyboard
+local shine = require 'moonshine'
+local gfx = love.graphics
+local kb = love.keyboard
 local screenW, screenH = gfx.getWidth(), gfx.getHeight()
-local fs               = love.window.getFullscreen()
-local running          = false
-local paddle_l         = {}
-local paddle_r         = {}
-local ball             = {}
-local text             = { t = "Welcome to PONG\n\nPress SPACE to start", t2 = '', alpha = 255, timer = 0 }
+local isFullscreen = love.window.getFullscreen()
+local running = false
+local paddle_l, paddle_r, ball = {}, {}, {}
+local text = {
+    t1 = "Welcome to PONG\n\nPress SPACE to start",
+    t2 = '',
+    alpha = 1,
+    timer = 0
+}
 
-math.randomseed( os.time() )
-math.random(); math.random(); math.random()
-
---
+math.randomseed(os.time())
 
 function initObjects()
-
     paddle_l = {
-        x      = 20,
-        y      = screenH/2-50,
+        x = 20,
+        y = screenH/2-50,
         height = 100,
-        width  = 10,
-        speed  = 250,
-        score  = 0
+        width = 10,
+        speed = 250,
+        score = 0
     }
 
     paddle_r = {
-        x      = screenW-30,
-        y      = screenH/2-50,
+        x = screenW-30,
+        y = screenH/2-50,
         height = 100,
-        width  = 10,
-        speed  = 250,
-        score  = 0
+        width = 10,
+        speed = 250,
+        score = 0
     }
 
     ball = {
-        x          = screenW/2-5,
-        y          = screenH/2-5,
-        speed      = 300,
-        angle      = math.random(20, 180),
+        x = screenW/2-5,
+        y = screenH/2-5,
+        speed = 300,
+        angle = math.random(20, 180),
         hdirection = 1,
         vdirection = 1,
-        height     = 10,
-        width      = 10
+        height = 10,
+        width = 10
     }
-
 end
 
 function love.load()
+    math.randomseed(os.time())
 
-    math.randomseed( os.time() )
+    font = gfx.newFont('font/digital-7.ttf', 32);
+    paddleblip = love.audio.newSource('audio/paddle.ogg', 'static')
+    ballblip = love.audio.newSource('audio/ball.ogg', 'static')
+    ballout = love.audio.newSource('audio/out.ogg', 'static')
+    win = love.audio.newSource('audio/win.ogg', 'static')
 
-    font       = gfx.newFont('digital-7.ttf', 32);
-    paddleblip = love.audio.newSource('audio/paddle.ogg')
-    ballblip   = love.audio.newSource('audio/ball.ogg')
-    ballout    = love.audio.newSource('audio/out.ogg')
-    win        = love.audio.newSource('audio/win.ogg')
-
-    gfx.setBackgroundColor(15,10,5)
-    gfx.setColor(255, 255, 255)
     gfx.setFont(font);
     love.mouse.setVisible(false)
-
     initObjects()
 
-    -- adds some juicy retro fx thanks to SHINE
-    grain       = shine.filmgrain { grainsize = 2, opacity = .35 }
-    blur        = shine.gaussianblur { sigma = 1 }
-    glow        = shine.glowsimple()
-    post_effect = grain:chain(blur):chain(glow)
-
-    -- adds a scanline shader taken from mari0
-    scanlines   = gfx.newShader('scanline-4x.frag')
-
+    -- fx
+    grain = shine.effects.filmgrain()
+    blur = shine.effects.fastgaussianblur()
+    glow = shine.effects.glow()
+    scanlines = shine.effects.scanlines()
+    effect = shine.chain(glow).chain(blur).chain(scanlines).chain(grain)
+    effect.params = {
+        glow = { strength = 20 },
+        scanlines = { width = 1, opacity = .5 },
+        filmgrain = { opacity = .75 }
+    }
 end
 
 function love.keypressed(key)
     if key == 'space' then
         running = not running
-        text.t = 'GAME PAUSED\n\nPress SPACE to continue'
+        text.t1 = 'GAME PAUSED\n\nPress SPACE to continue'
     end
+
     if key == 'escape' then love.event.push('quit') end
+
     if key == 'f' then
-        fs = not fs
-        love.window.setMode(screenW, screenH, {fullscreen=fs})
+        isFullscreen = not isFullscreen
+        love.window.setFullscreen(isFullscreen)
     end
 end
 
@@ -93,7 +91,7 @@ function love.update(dt)
         text.timer = text.timer + dt
         if text.timer >= .5 then
             text.timer = text.timer - .5
-            text.alpha = text.alpha == 255 and 0 or 255
+            text.alpha = text.alpha == 1 and 0 or 1
         end
         return
     end
@@ -107,6 +105,7 @@ function love.update(dt)
     if kb.isDown('up') and paddle_r.y > 0 then
         paddle_r.y = paddle_r.y - paddle_r.speed*dt
     end
+
     if kb.isDown('down') and paddle_r.y < screenH-paddle_r.height then
         paddle_r.y = paddle_r.y + paddle_r.speed*dt
     end
@@ -173,66 +172,61 @@ function love.update(dt)
         ball.vdirection = math.random(2) == 1 and 1 or -1
         ball.hdirection = math.random(2) == 1 and 1 or -1
 
-        if paddle_l.score == 11 or paddle_r.score == 11 then text.t2 = 'Matchball' end
+        if paddle_l.score == 11 or paddle_r.score == 11 then text.t2 = 'Matchball!' end
         if paddle_l.score == 12 or paddle_r.score == 12 then
             text.t2 = ''
             running = false
             reset = true
             love.audio.play(win)
 
-            if paddle_l.score == 12 then text.t = "You loose"
-            elseif paddle_r.score == 12 then text.t = "You win"
+            if paddle_l.score == 12 then text.t1 = "I win!"
+            elseif paddle_r.score == 12 then text.t1 = "You win!"
             end
 
-            text.t = text.t .. "\n\nPress SPACE to restart"
+            text.t1 = text.t1 .. "\n\nPress SPACE to restart"
         end
     end
 
 end
 
 function love.draw(dt)
-
-    post_effect(function()
+    effect(function()
+        gfx.setBackgroundColor(0, 0, 0)
 
         if running == false then
             gfx.setColor(255, 255, 255, text.alpha)
-            gfx.printf(text.t, 0, screenH-80, screenW, 'center')
+            gfx.printf(text.t1, 0, screenH-80, screenW, 'center')
         end
 
-        gfx.setColor(255, 255, 255, 255)
-        if paddle_l.y < 80 then gfx.setColor(255, 255, 255, 50) end
+        gfx.setColor(255, 255, 255, 1)
+        if paddle_l.y < 80 then gfx.setColor(255, 255, 255, .5) end
         gfx.print('Computer', 20, 40)
 
-        gfx.setColor(255, 255, 255, 255)
-        if paddle_r.y < 80 then gfx.setColor(255, 255, 255, 50) end
+        gfx.setColor(255, 255, 255, 1)
+        if paddle_r.y < 80 then gfx.setColor(255, 255, 255, .5) end
         gfx.print('Player', screenW-110, 40)
 
-        gfx.setColor(255, 255, 255, 255)
+        gfx.setColor(255, 255, 255, 1)
         gfx.print(paddle_l.score, screenW/2-60, 40)
         gfx.print(paddle_r.score, screenW/2+40, 40)
         gfx.printf(text.t2, 0, screenH-40, screenW, 'center')
 
-        gfx.setShader(scanlines)
         gfx.rectangle('fill', paddle_l.x, paddle_l.y, paddle_l.width, paddle_l.height)
         gfx.rectangle('fill', paddle_r.x, paddle_r.y, paddle_r.width, paddle_r.height)
         gfx.rectangle('fill', ball.x, ball.y, ball.width, ball.height)
-        gfx.setShader()
 
-        gfx.setColor(255, 255, 255, 120)
+        gfx.setColor(255, 255, 255, .5)
         gfx.rectangle('line', screenW/2, 0, 1, screenH)
-
     end)
 
     --gfx.print( love.timer.getFPS(), 20, screenH-40 )
-
 end
 
-function collision(X1, Y1, W1, H1, X2, Y2, W2, H2)
-     if X1 > X2 + W2 then return false end
-     if X1 + W1 < X2 then return false end
-     if Y1 > Y2 + H2 then return false end
-     if Y1 + H1 < Y2 then return false end
-     return true
+function collision(x1, y1, w1, h1, x2, y2, w2, h2)
+    return x1 < x2+w2 and
+        x2 < x1+w1 and
+        y1 < y2+h2 and
+        y2 < y1+h1
 end
 
 function round(x)
