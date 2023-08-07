@@ -47,6 +47,7 @@ end
 
 function love.load()
     math.randomseed(os.time())
+    initObjects()
 
     font = gfx.newFont('font/digital-7.ttf', 32);
     paddleblip = love.audio.newSource('audio/paddle.ogg', 'static')
@@ -54,9 +55,9 @@ function love.load()
     ballout = love.audio.newSource('audio/out.ogg', 'static')
     win = love.audio.newSource('audio/win.ogg', 'static')
 
-    gfx.setFont(font);
+    gfx.setFont(font)
+    gfx.setBackgroundColor(0, 0, 0)
     love.mouse.setVisible(false)
-    initObjects()
 
     -- fx
     grain = shine.effects.filmgrain()
@@ -191,7 +192,6 @@ end
 
 function love.draw(dt)
     effect(function()
-        gfx.setBackgroundColor(0, 0, 0)
 
         if running == false then
             gfx.setColor(255, 255, 255, text.alpha)
