@@ -14,6 +14,8 @@ Start game:
 
 ```cd love-pong; love .```
 
+Or create a release with `make release` and start the resulting .love file directly from `release/pong.love`.
+
 ## License
 
 [MIT License](LICENSE.md)

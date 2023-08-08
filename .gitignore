@@ -1,2 +1,3 @@
-releases
-.vscode
+release/*
+!release/.gitkeep
+.DS_Store
