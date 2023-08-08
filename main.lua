@@ -5,7 +5,7 @@ local isFullscreen, isRunning, isGameOver = love.window.getFullscreen(), false, 
 local left, right, ball = {}, {}, {}
 local sounds, effects = {}, {}
 local text = { t1 = "", t2 = "", alpha = 1, timer = 0 }
-local maxAngle = 165
+local maxV, defaulthspeed = 200, 300
 
 local function initObjects()
     left = {
@@ -20,7 +20,7 @@ local function initObjects()
 
     ball = {
         x = screenW/2-5, y = screenH/2-5, h = 10, w = 10,
-        hspeed = 300, angle = math.random(20, maxAngle),
+        hspeed = defaulthspeed, angle = math.random(20, maxV),
         hdirection = 1, vdirection = 1
     }
 end
@@ -153,7 +153,7 @@ function love.update(dt)
         ball.hdirection = -ball.hdirection
         ball.vdirection = math.random(2) == 1 and 1 or -1 -- randomly select 1 or -1
         ball.hspeed = ball.hspeed + 10 -- speed up
-        ball.angle  = math.random(20, maxAngle) -- random vertical speed
+        ball.angle  = math.random(20, maxV) -- random vertical speed
     end
 
     -- ball out: score
@@ -163,8 +163,8 @@ function love.update(dt)
         if ball.x > screenW then left.score = left.score + 1 end
         if ball.x < 0 then right.score = right.score + 1 end
 
-        ball.hspeed = 300
-        ball.angle  = math.random(20, maxAngle)
+        ball.hspeed = defaulthspeed
+        ball.angle  = math.random(20, maxV)
         ball.x = screenW/2-ball.w/2
         ball.y = screenH/2-ball.h/2
         ball.vdirection = math.random(2) == 1 and 1 or -1
