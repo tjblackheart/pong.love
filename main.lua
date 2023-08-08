@@ -1,5 +1,5 @@
 local shine = require "moonshine"
-local gfx, kb, audio = love.graphics, love.keyboard, love.audio
+local gfx, kb, sfx = love.graphics, love.keyboard, love.audio
 local screenW, screenH = gfx.getWidth(), gfx.getHeight()
 local isFullscreen, isRunning, isGameOver = love.window.getFullscreen(), false, false
 local left, right, ball = {}, {}, {}
@@ -44,10 +44,10 @@ function love.load()
 
     text.t1 = "Welcome to PONG\n\nPress SPACE to start"
 
-    sounds.paddle = audio.newSource('audio/paddle.ogg', 'static')
-    sounds.ball = audio.newSource('audio/ball.ogg', 'static')
-    sounds.miss = audio.newSource('audio/out.ogg', 'static')
-    sounds.win = audio.newSource('audio/win.ogg', 'static')
+    sounds.paddle = sfx.newSource('audio/paddle.ogg', 'static')
+    sounds.ball = sfx.newSource('audio/ball.ogg', 'static')
+    sounds.miss = sfx.newSource('audio/out.ogg', 'static')
+    sounds.win = sfx.newSource('audio/win.ogg', 'static')
 
     gfx.setFont(gfx.newFont('font/digital-7.ttf', 32))
     gfx.setBackgroundColor(0, 0, 0)
@@ -135,16 +135,16 @@ function love.update(dt)
 
     -- ball hits edges
     if ball.y <= 0 then
-        audio.play(sounds.ball)
+        sfx.play(sounds.ball)
         ball.vdirection = 1
     elseif ball.y + ball.h >= screenH then
-        audio.play(sounds.ball)
+        sfx.play(sounds.ball)
         ball.vdirection = -1
     end
 
     -- collision check
     if hit(left, ball) or hit(right, ball) then
-        audio.play(sounds.paddle)
+        sfx.play(sounds.paddle)
 
         -- double check positions
         if ball.x < left.x+left.w then ball.x = left.x + left.w end
@@ -158,7 +158,7 @@ function love.update(dt)
 
     -- ball out: score
     if ball.x > screenW or ball.x < 0 then
-        audio.play(sounds.miss)
+        sfx.play(sounds.miss)
 
         if ball.x > screenW then left.score = left.score + 1 end
         if ball.x < 0 then right.score = right.score + 1 end
@@ -175,7 +175,7 @@ function love.update(dt)
         end
 
         if left.score == 12 or right.score == 12 then
-            audio.play(sounds.win)
+            sfx.play(sounds.win)
 
             text.t2 = ''
             isRunning = false
