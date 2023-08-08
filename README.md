@@ -1,6 +1,6 @@
 # A love2d pong game
 
-Built with [love2d](http://love2d.org) 0.10. Updated for love 11.4.
+Built with [love2d](http://love2d.org) 0.10 in 2011. Updated for love 11.* in 2023.
 
 ![pöng](pong.gif)
 

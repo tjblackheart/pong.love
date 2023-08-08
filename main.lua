@@ -1,71 +1,68 @@
-local shine = require 'moonshine'
-local gfx = love.graphics
-local kb = love.keyboard
+local shine = require "moonshine"
+local gfx, kb, audio = love.graphics, love.keyboard, love.audio
 local screenW, screenH = gfx.getWidth(), gfx.getHeight()
 local isFullscreen = love.window.getFullscreen()
-local running = false
+local running, reset = false, false
 local paddle_l, paddle_r, ball = {}, {}, {}
-local text = {
-    t1 = "Welcome to PONG\n\nPress SPACE to start",
-    t2 = '',
-    alpha = 1,
-    timer = 0
-}
+local sounds, effects = {}, {}
+local text = { t1 = "", t2 = "", alpha = 1, timer = 0 }
+local maxAngle = 165
 
 math.randomseed(os.time())
 
-function initObjects()
+local function initObjects()
     paddle_l = {
-        x = 20,
-        y = screenH/2-50,
-        h = 100,
-        w = 10,
-        speed = 250,
-        score = 0
+        x = 20, y = screenH/2-50, h = 100, w = 10,
+        speed = 250, score = 0
     }
 
     paddle_r = {
-        x = screenW-30,
-        y = screenH/2-50,
-        h = 100,
-        w = 10,
-        speed = 250,
-        score = 0
+        x = screenW-30, y = screenH/2-50, h = 100, w = 10,
+        speed = 250, score = 0
     }
 
     ball = {
-        x = screenW/2-5,
-        y = screenH/2-5,
-        h = 10,
-        w = 10,
-        speed = 300,
-        angle = math.random(20, 180),
-        hdirection = 1,
-        vdirection = 1
+        x = screenW/2-5, y = screenH/2-5, h = 10, w = 10,
+        hspeed = 300, angle = math.random(20, maxAngle),
+        hdirection = 1, vdirection = 1
     }
 end
 
+local function hit(a, b)
+    return
+        a.x <= b.x + b.w and
+        b.x <= a.x + a.w and
+        a.y <= b.y + b.h and
+        b.y <= a.y + a.h
+end
+
+local function round(x)
+    return (x >= 0 and math.floor(x + 0.5)) or math.ceil(x - 0.5)
+end
+
 function love.load()
+    love.mouse.setVisible(false)
     math.randomseed(os.time())
     initObjects()
 
-    font = gfx.newFont('font/digital-7.ttf', 32);
-    paddleblip = love.audio.newSource('audio/paddle.ogg', 'static')
-    ballblip = love.audio.newSource('audio/ball.ogg', 'static')
-    ballout = love.audio.newSource('audio/out.ogg', 'static')
-    win = love.audio.newSource('audio/win.ogg', 'static')
+    text.t1 = "Welcome to PONG\n\nPress SPACE to start"
 
-    gfx.setFont(font)
+    sounds.paddle = audio.newSource('audio/paddle.ogg', 'static')
+    sounds.ball = audio.newSource('audio/ball.ogg', 'static')
+    sounds.miss = audio.newSource('audio/out.ogg', 'static')
+    sounds.win = audio.newSource('audio/win.ogg', 'static')
+
+    gfx.setFont(gfx.newFont('font/digital-7.ttf', 32))
     gfx.setBackgroundColor(0, 0, 0)
-    love.mouse.setVisible(false)
 
     -- fx
-    grain = shine.effects.filmgrain()
-    blur = shine.effects.fastgaussianblur()
-    glow = shine.effects.glow()
-    scanlines = shine.effects.scanlines()
-    effect = shine.chain(glow).chain(blur).chain(scanlines).chain(grain)
-    effect.params = {
+    local grain = shine.effects.filmgrain()
+    local blur = shine.effects.fastgaussianblur()
+    local glow = shine.effects.glow()
+    local scanlines = shine.effects.scanlines()
+
+    effects = shine.chain(glow).chain(blur).chain(scanlines).chain(grain)
+    effects.params = {
         glow = { strength = 20 },
         scanlines = { width = 1, opacity = .5 },
         filmgrain = { opacity = .75 }
@@ -104,11 +101,11 @@ function love.update(dt)
 
     -- player1 paddle movement
     if kb.isDown('up') and paddle_r.y > 0 then
-        paddle_r.y = paddle_r.y - paddle_r.speed*dt
+        paddle_r.y = paddle_r.y - paddle_r.speed * dt
     end
 
     if kb.isDown('down') and paddle_r.y < screenH-paddle_r.h then
-        paddle_r.y = paddle_r.y + paddle_r.speed*dt
+        paddle_r.y = paddle_r.y + paddle_r.speed * dt
     end
 
     -- player2 paddle movement
@@ -131,55 +128,56 @@ function love.update(dt)
     end
 
     -- ball positions
-    if ball.hdirection == 1 then ball.x = ball.x + ball.speed*dt
-    else ball.x = ball.x - ball.speed*dt
+    if ball.hdirection == 1 then ball.x = ball.x + ball.hspeed * dt
+    else ball.x = ball.x - ball.hspeed * dt
     end
 
-    if ball.vdirection == 1 then ball.y = ball.y + ball.angle*dt
-    else ball.y = ball.y - ball.angle*dt
+    if ball.vdirection == 1 then ball.y = ball.y + ball.angle * dt
+    else ball.y = ball.y - ball.angle * dt
     end
 
     -- ball hits edges
     if ball.y - ball.h <= 0 then
         ball.vdirection = 1
-        love.audio.play(ballblip)
+        audio.play(sounds.ball)
     elseif ball.y+ball.h >= screenH then
         ball.vdirection = -1
-        love.audio.play(ballblip)
+        audio.play(sounds.ball)
     end
 
-    -- ball hits paddles
-    if
-        collision(paddle_l.x, paddle_l.y, paddle_l.w, paddle_l.h, ball.x, ball.y, ball.w, ball.h)
-        or
-        collision(paddle_r.x, paddle_r.y, paddle_r.w, paddle_r.h, ball.x, ball.y, ball.w, ball.h)
-    then
+    -- collision check
+    if hit(paddle_l, ball) or hit(paddle_r, ball) then
+        audio.play(sounds.paddle)
         ball.hdirection = -ball.hdirection
         ball.vdirection = math.random(2) == 1 and 1 or -1 -- randomly select 1 or -1
-        ball.speed = ball.speed + 10 -- speed up
-        ball.angle  = math.random(20, 180) -- random vertical speed
-        love.audio.play(paddleblip)
+        ball.hspeed = ball.hspeed + 10 -- speed up
+        ball.angle  = math.random(20, maxAngle) -- random vertical speed
     end
 
     -- ball out: score
     if ball.x > screenW or ball.x < 0 then
+        audio.play(sounds.miss)
+
         if ball.x > screenW then paddle_l.score = paddle_l.score + 1 end
         if ball.x < 0 then paddle_r.score = paddle_r.score + 1 end
 
-        love.audio.play(ballout)
-        ball.speed = 300
-        ball.angle  = math.random(20, 180)
+        ball.hspeed = 300
+        ball.angle  = math.random(20, maxAngle)
         ball.x = screenW/2-ball.w/2
         ball.y = screenH/2-ball.h/2
         ball.vdirection = math.random(2) == 1 and 1 or -1
         ball.hdirection = math.random(2) == 1 and 1 or -1
 
-        if paddle_l.score == 11 or paddle_r.score == 11 then text.t2 = 'Matchball!' end
+        if paddle_l.score == 11 or paddle_r.score == 11 then
+            text.t2 = 'Matchball!'
+        end
+
         if paddle_l.score == 12 or paddle_r.score == 12 then
+            audio.play(sounds.win)
+
             text.t2 = ''
             running = false
             reset = true
-            love.audio.play(win)
 
             if paddle_l.score == 12 then text.t1 = "I win!"
             elseif paddle_r.score == 12 then text.t1 = "You win!"
@@ -192,8 +190,7 @@ function love.update(dt)
 end
 
 function love.draw(dt)
-    effect(function()
-
+    effects(function()
         if running == false then
             gfx.setColor(255, 255, 255, text.alpha)
             gfx.printf(text.t1, 0, screenH-80, screenW, 'center')
@@ -220,16 +217,6 @@ function love.draw(dt)
         gfx.rectangle('line', screenW/2, 0, 1, screenH)
     end)
 
-    --gfx.print( love.timer.getFPS(), 20, screenH-40 )
-end
-
-function collision(x1, y1, w1, h1, x2, y2, w2, h2)
-    return x1 < x2+w2 and
-        x2 < x1+w1 and
-        y1 < y2+h2 and
-        y2 < y1+h1
-end
-
-function round(x)
-    return x>=0 and math.floor(x+0.5) or math.ceil(x-0.5)
+    -- gfx.print("angle: " .. tostring(ball.vspeed), 20, screenH - 80)
+    -- gfx.print("hspeed: " .. tostring(ball.hspeed), 20, screenH - 40)
 end
