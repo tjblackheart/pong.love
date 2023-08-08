@@ -220,3 +220,7 @@ function love.draw(dt)
     -- gfx.print("angle: " .. tostring(ball.vspeed), 20, screenH - 80)
     -- gfx.print("hspeed: " .. tostring(ball.hspeed), 20, screenH - 40)
 end
+
+function love.focus(f)
+    if not f and running then running = not running end
+end
