@@ -15,7 +15,7 @@ jobs:
 
       - name: Build
         run: |
-          rm release/*
+          rm -f release/* || true
           zip -x "release/" -x "release/.*" -9 -r release/pong.love *
 
       - name: Release
