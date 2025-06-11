@@ -1,0 +1,25 @@
+name: Release
+
+on: 
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+
+      - name: Build
+        run: |
+          rm release/*
+          zip -x "release/" -x "release/.*" -9 -r release/pong.love *
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "release/pong.love"
+          allowUpdates: true
