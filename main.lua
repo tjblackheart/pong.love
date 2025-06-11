@@ -147,7 +147,7 @@ function love.update(dt)
         sfx.play(sounds.paddle)
 
         -- double check positions
-        if ball.x < left.x+left.w then ball.x = left.x + left.w end
+        if ball.x < left.x + left.w then ball.x = left.x + left.w end
         if ball.x + ball.w > right.x then ball.x = right.x - ball.w end
 
         ball.hdirection = -ball.hdirection
@@ -223,6 +223,6 @@ function love.draw(dt)
     -- gfx.print("hspeed: " .. tostring(ball.hspeed), 20, screenH - 40)
 end
 
-function love.focus(f)
-    if not f and isRunning then isRunning = not isRunning end
+function love.focus(isFocused)
+    if not isFocused and isRunning then isRunning = not isRunning end
 end
